@@ -1,0 +1,2 @@
+﻿Those data are deemed to reset between scenes!
+Should be installed in MainSceneInstaller.
