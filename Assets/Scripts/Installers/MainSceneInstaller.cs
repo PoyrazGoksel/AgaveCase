@@ -88,8 +88,8 @@ namespace Installers
         [Serializable]
         public class Settings
         {
-            [InlineEditor][SerializeField] private List<LevelSettings> _levelList;
-            public List<LevelSettings> LevelList => _levelList;
+            [InlineEditor][SerializeField] private List<LevelData> _levelList;
+            public List<LevelData> LevelList => _levelList;
         }
     }
 }

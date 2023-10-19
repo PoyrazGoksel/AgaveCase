@@ -31,7 +31,6 @@ namespace Installers
         [Inject] private GameStateEvents GameStateEvents { get; set; }
         private ZenjectPool _gridItemPool;
         private Vector3 _gridPadding;
-        [ShowInInspector] private List<Hint> _matchHintCells = new();
         private Settings _mySettings;
 
         ITweenContainer ITweenContainerBind.TweenContainer
@@ -43,17 +42,18 @@ namespace Installers
         private void Awake()
         {
             _gridItemPool = new ZenjectPool(new ZenjectPoolData(Container, _gridItemPrefab, 64));
-            
+
             _gridPadding = _cellPrefab.GetComponent<Cell>()
             .SpriteRenderer.bounds.size;
 
             TweenContainer = TweenContain.Install(this);
 
             _itemSpawners = new ItemSpawner[_grid2D.Size.x];
-            
+
             for (int x = 0; x < _grid2D.Size.x; x ++)
             {
-                ItemSpawner itemSpawner = new(new Vector3(x * _gridPadding.x, GetGridTopCellPosY(), 0), _grid2D.Bounds);
+                ItemSpawner itemSpawner = new
+                (new Vector3(x * _gridPadding.x, GetGridTopCellPosY(), 0), _grid2D.Bounds);
 
                 _itemSpawners[x] = itemSpawner;
                 itemSpawner.SetActive();
@@ -104,7 +104,8 @@ namespace Installers
 
         private void RandomizeGrid()
         {
-            List<GridItemData> gridItemDatas = new(_mySettings.GridItemData.Where(e => e.ID != -1 && e.ID != 0));
+            List<GridItemData> gridItemDatas = new
+            (_mySettings.GridItemData.Where(e => e.ID != -1 && e.ID != 0));
 
             foreach (KeyValuePair<Vector2Int, Cell> keyValuePair in _grid2D)
             {
@@ -133,15 +134,14 @@ namespace Installers
             }
         }
 
-        private void InstantiateGridItem
-        (Cell cellToAssign, GridItemData gridItemData)
+        private void InstantiateGridItem(Cell cellToAssign, GridItemData gridItemData)
         {
             GridItem instantiateGridItem = _gridItemPool.Request<GridItem>(cellToAssign.Transform);
 
-            ((IGridItemGridAccess) instantiateGridItem).Construct
+            ((IGridItemGridAccess)instantiateGridItem).Construct
             (gridItemData.Clone(), cellToAssign, _grid2D.Bounds);
 
-            ((ICellGridAccess) cellToAssign).AssignGridItem(instantiateGridItem);
+            ((ICellGridAccess)cellToAssign).AssignGridItem(instantiateGridItem);
             instantiateGridItem.Transform.SetParent(cellToAssign.Transform);
             instantiateGridItem.Transform.localPosition = Vector3.zero;
         }
@@ -156,12 +156,7 @@ namespace Installers
 
             if (allMatches.Count > 0)
             {
-                List<Cell> matchedCells = allMatches.Select(e => e.Cell)
-                .ToList();
-
-                matchedCells.DoToAll(
-                    DestroyGridItem
-                );
+                allMatches.DoToAll(DestroyGridItem);
 
                 SpawnNewGridItems();
             }
@@ -171,10 +166,12 @@ namespace Installers
             }
         }
 
-        private void DestroyGridItem(Cell e)
+        private void DestroyGridItem(GridItem gridItem)
         {
-            _gridItemPool.DeSpawn(e.GridItem);
-            ((ICellGridAccess)e).AssignGridItem(null);
+            ICellGridAccess cellGridAccess = gridItem.Cell;
+            _gridItemPool.DeSpawnAfterTween(gridItem);
+
+            cellGridAccess.AssignGridItem(null);
         }
 
         private void DestroyCellItem(Cell cell)
@@ -187,7 +184,6 @@ namespace Installers
 
         private void SpawnNewGridItems()
         {
-            _matchHintCells.Clear();
             List<GridItemData> gridItemDatas = new(_mySettings.GridItemData);
 
             gridItemDatas = gridItemDatas.Where(e => e.ID != -1 && e.ID != 0)
@@ -247,20 +243,17 @@ namespace Installers
                         if (cellToAssign == null) continue;
 
                         ItemSpawner columnSpawner = _itemSpawners[cellToAssign.Coord.x];
-                        
+
                         if (columnSpawner.CanSpawn == false)
+                        {
                             continue;
-                        
+                        }
+
                         GridItemData randomGridItemData = gridItemDatas.Random();
 
-                        GridItem instantiateGridItem = columnSpawner
-                        .InstantiateGridItems
-                        (
-                            _gridItemPool,
-                            cellToAssign,
-                            randomGridItemData
-                        );
-                        
+                        GridItem instantiateGridItem = columnSpawner.InstantiateGridItem
+                        (_gridItemPool, cellToAssign, randomGridItemData);
+
                         instantiateGridItem.Transform.position = new Vector3
                         (
                             cellToAssign.Transform.position.x,
@@ -269,7 +262,7 @@ namespace Installers
                         );
 
                         instantiateGridItem.UpdateRenderer();
-                        
+
                         droppedCells.Add
                         (new Vector2Int(cellToAssign.Coord.x, cellToAssign.Coord.y), cellToAssign);
                     }
@@ -288,14 +281,14 @@ namespace Installers
                     {
                         delayCounter ++;
 
-                        GridItem gridItem = droppedCells[new Vector2Int(x, y)]
-                        .GridItem;
+                        GridItem gridItem = droppedCells[new Vector2Int(x, y)].GridItem;
 
-                        Tween doLocalMove = gridItem.Transform.DOLocalMove(Vector3.zero, _mySettings.DropAnimDur);
+                        Tween doLocalMove = gridItem.Transform.DOLocalMove
+                        (Vector3.zero, _mySettings.DropAnimDur);
 
                         TweenContainer.AddedSeq.Insert
                         (delayCounter * _mySettings.DropAnimDelay, doLocalMove);
-                        
+
                         doLocalMove.onUpdate += delegate
                         {
                             if (gridItem.IsVisible) return;
@@ -313,7 +306,9 @@ namespace Installers
                 foreach (KeyValuePair<Vector2Int, Cell> pair in _grid2D)
                 {
                     if (pair.Value.GridItem == null)
+                    {
                         continue;
+                    }
 
                     List<GridItem> matches = GridF.TryGetMatches(pair.Value, _grid2D, 3);
 
@@ -325,13 +320,13 @@ namespace Installers
 
                 if (allMatches.Count > 0)
                 {
-                    allMatches.DoToAll(e => DestroyGridItem(e.Cell));
+                    allMatches.DoToAll(DestroyGridItem);
                     SpawnNewGridItems();
                 }
                 else
                 {
                     bool isGameOver = false;
-                    
+
                     /*
                     foreach (KeyValuePair<Vector2Int,Cell> pair in _grid2D)
                     {
@@ -352,9 +347,9 @@ namespace Installers
                                     _grid2D,
                                     3
                                 );
-                                
+
                                 if (matches.Count == 0) continue;
-                                
+
                                 _matchHintCells.Add(new Hint(matches));
                                 isGameOver = false;
                             }
@@ -375,6 +370,11 @@ namespace Installers
 
         private Cell GetCell(int x, int y)
         {
+            if (_grid2D.ContainsKey(new Vector2Int(x, y)) == false)
+            {
+                return null;
+            }
+
             return _grid2D[new Vector2Int(x, y)];
         }
 
@@ -387,6 +387,7 @@ namespace Installers
         {
             GridEvents.SwapGridItems += OnSwapGridItems;
             GridEvents.RevertSwipe += OnRevertSwipe;
+            GridEvents.GetGridItem = OnGetGridItem;
         }
 
         private void OnSwapGridItems(Cell mouseDownCell, Cell mouseUpCell)
@@ -401,10 +402,20 @@ namespace Installers
             Swap(arg0.Cell, arg1.Cell);
         }
 
+        private GridItem OnGetGridItem(Vector2Int arg)
+        {
+            Cell cell = GetCell(arg.x, arg.y);
+
+            if (cell == null) return null;
+
+            return cell.GridItem;
+        }
+
         private void UnRegisterEvents()
         {
             GridEvents.SwapGridItems -= OnSwapGridItems;
             GridEvents.RevertSwipe -= OnRevertSwipe;
+            GridEvents.GetGridItem = null;
         }
 
         [Serializable]
@@ -421,6 +432,7 @@ namespace Installers
 
                 _size = new Vector2Int
                 (Mathf.Max(_size.x, key.x + 1), Mathf.Max(_size.y, key.y + 1));
+
                 _bounds.Encapsulate(value.SpriteRenderer.bounds);
             }
 
@@ -431,8 +443,10 @@ namespace Installers
 
             public bool IsInBounds(Vector2Int neighPos)
             {
-                return neighPos.x >= 0 && neighPos.x < _size.x &&
-                       neighPos.y >= 0 && neighPos.y < _size.y;
+                return neighPos.x >= 0 &&
+                neighPos.x < _size.x &&
+                neighPos.y >= 0 &&
+                neighPos.y < _size.y;
             }
         }
 
@@ -613,12 +627,8 @@ namespace Installers
             _canSpawn = isActive;
         }
 
-        public GridItem InstantiateGridItems
-        (
-            ZenjectPool zenjectPool,
-            Cell cellToAssign,
-            GridItemData gridItemData
-        )
+        public GridItem InstantiateGridItem
+        (ZenjectPool zenjectPool, Cell cellToAssign, GridItemData gridItemData)
         {
             if (_canSpawn == false) return null;
 
@@ -636,6 +646,7 @@ namespace Installers
 
     public interface IGridEditorAccess
     {
+#if UNITY_EDITOR
         void CreateGrid(Vector2Int size);
 
         Vector3 GetGridPadding();
@@ -649,5 +660,6 @@ namespace Installers
         void InstantiateGridItemsEditor(Cell cellToAssign, GridItemData gridItemData);
 
         void DiscardItems();
+#endif
     }
 }

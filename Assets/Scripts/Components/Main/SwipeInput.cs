@@ -10,6 +10,13 @@ namespace Components.Main
 {
     public class SwipeInput : EventListenerMono, ITweenContainerBind
     {
+        ITweenContainer ITweenContainerBind.TweenContainer
+        {
+            get => TweenContainer;
+            set => TweenContainer = value;
+        }
+
+        private ITweenContainer TweenContainer { get; set; }
         [Inject] private GridEvents GridEvents { get; set; }
         [Inject] private CameraEvents CameraEvents { get; set; }
         private Camera _mainCam;
@@ -17,7 +24,8 @@ namespace Components.Main
         private GridItem _mouseUpItem;
         private float _swapAnimDur = 0.3f;
         private RoutineHelper _swipeRoutine;
-        public ITweenContainer TweenContainer { get; set; }
+        private Vector3 _mouseDownPos;
+        private float _swipeThreshold = 0.5f;
 
         private void Awake()
         {
@@ -38,45 +46,68 @@ namespace Components.Main
 
             if (Input.GetMouseButtonDown(0))
             {
-                _mouseDownItem = GetGridItemAtPoint(mousePosition);
+                _mouseDownPos = mousePosition;
+                SelectItem(GetGridItemAtPoint(mousePosition));
             }
             else if (Input.GetMouseButtonUp(0))
             {
-                _mouseUpItem = GetGridItemAtPoint(mousePosition);
-
-                if (_mouseUpItem != null && _mouseDownItem != null)
+                if (_mouseDownItem == null) return;
+                
+                if (Vector2.Distance(_mouseDownPos, mousePosition) > _swipeThreshold)
                 {
+                    Vector3 swipeDir = mousePosition - _mouseDownPos;
 
-                    if ((_mouseDownItem.Coord - _mouseUpItem.Coord).Mag() == 1)
+                    int maxAxisIndex = swipeDir.GetMaxAxisIndex();
+
+                    Vector2Int swipeDirCoord = Vector2Int.zero;
+
+                    swipeDirCoord[maxAxisIndex] = (int)(1 *
+                        (swipeDir[maxAxisIndex] / Mathf.Abs(swipeDir[maxAxisIndex])));
+
+                    GridItem swipeDirNeigh = GridEvents.GetGridItem?.Invoke
+                    (_mouseDownItem.Coord + swipeDirCoord);
+
+                    if (swipeDirNeigh != null)
                     {
-                        TrySwap(_mouseDownItem, _mouseUpItem);
+                        SwapItems(_mouseDownItem, swipeDirNeigh);
                     }
                 }
-                else
-                {
-                    _mouseDownItem = null;
-                }
+                
+                SelectItem(null);
             }
         }
 
-        private void TrySwap(GridItem mouseDownItem, GridItem mouseUpItem)
+        private void SelectItem(GridItem getGridItemAtPoint)
         {
-            if (AreNeighbors(mouseDownItem, mouseUpItem))
+            if (_mouseDownItem)
             {
-                _swipeRoutine.SetPaused();
-                
-                DoSwapAnim(mouseDownItem, mouseUpItem)
-                .onComplete += delegate
-                {
-                    GridEvents.SwapGridItems?.Invoke(mouseDownItem.Cell, mouseUpItem.Cell);
-                };
+                ((ISelectable)_mouseDownItem).OnDeselect();
             }
+            
+            if (getGridItemAtPoint)
+            {
+                ((ISelectable)getGridItemAtPoint).OnSelect();
+            }
+            
+            _mouseDownItem = getGridItemAtPoint;
+        }
+
+        private void SwapItems(GridItem mouseDownItem, GridItem mouseUpItem)
+        {
+            _swipeRoutine.SetPaused();
+
+            DoSwapAnim(mouseDownItem, mouseUpItem)
+            .onComplete += delegate
+            {
+                GridEvents.SwapGridItems?.Invoke(mouseDownItem.Cell, mouseUpItem.Cell);
+            };
         }
 
         public void RevertSwipe(GridItem mouseDown, GridItem mouseUp)
         {
-            DoSwapAnim(mouseDown, mouseUp).onComplete += delegate
-            { 
+            DoSwapAnim(mouseDown, mouseUp)
+            .onComplete += delegate
+            {
                 GridEvents.RevertSwipe?.Invoke(mouseDown, mouseUp);
                 _swipeRoutine.SetPaused(false);
             };
@@ -89,33 +120,18 @@ namespace Components.Main
 
             TweenContainer.AddSequence = DOTween.Sequence();
 
-            Tween fromItemTween = fromItemTransform.DOMove(mouseUpItem.Cell.transform.position, _swapAnimDur);
-            Tween toItemTween = toItemTransform.DOMove(mouseDownItem.Cell.transform.position, _swapAnimDur);
+            Tween fromItemTween = fromItemTransform.DOMove
+            (mouseUpItem.Cell.transform.position, _swapAnimDur);
+
+            Tween toItemTween = toItemTransform.DOMove
+            (mouseDownItem.Cell.transform.position, _swapAnimDur);
 
             TweenContainer.AddedSeq.Append(fromItemTween);
             TweenContainer.AddedSeq.Join(toItemTween);
 
             return TweenContainer.AddedSeq;
         }
-
-        private bool AreNeighbors(GridItem item1, GridItem item2)
-        {
-            int distance = CalculateDistanceBetweenCells
-            (
-                item1.Cell,
-                item2.Cell
-            );
-
-            return distance == 1;
-        }
-
-        private int CalculateDistanceBetweenCells(Cell cell1, Cell cell2)
-        {
-            Vector2Int dist = cell1.Coord - cell2.Coord;
-
-            return dist.Mag();
-        }
-
+        
         private GridItem GetGridItemAtPoint(Vector2 point)
         {
             Vector3 point3 = point;
@@ -124,12 +140,7 @@ namespace Components.Main
 
             Ray ray = _mainCam.ScreenPointToRay(point3);
 
-            RaycastHit2D hit = Physics2D.Raycast
-            (
-                ray.origin,
-                ray.direction,
-                Mathf.Infinity
-            );
+            RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, Mathf.Infinity);
 
             Collider2D hitCollider = hit.collider;
 

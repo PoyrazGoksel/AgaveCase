@@ -2,8 +2,8 @@
 
 namespace Datas.Settings
 {
-    [CreateAssetMenu(fileName = nameof(LevelSettings), menuName = "Settings/" + nameof(LevelSettings))]
-    public class LevelSettings : ScriptableObject
+    [CreateAssetMenu(fileName = nameof(LevelData), menuName = "Settings/" + nameof(LevelData))]
+    public class LevelData : ScriptableObject
     {
         [SerializeField] private GameObject _levelPrefab;
         public GameObject LevelPrefab => _levelPrefab;

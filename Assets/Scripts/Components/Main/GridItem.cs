@@ -1,12 +1,21 @@
 using System;
 using Datas;
+using DG.Tweening;
+using Extensions.DoTween;
 using Extensions.Unity;
 using UnityEngine;
 
 namespace Components.Main
 {
-    public class GridItem : MonoBehaviour, IGridItemGridAccess, IZenjPoolObj
+    public class GridItem : MonoBehaviour, IGridItemGridAccess, IZenjPoolObj, ITweenContainerBind, ISelectable
     {
+        ITweenContainer ITweenContainerBind.TweenContainer
+        {
+            get => TweenContainer;
+            set => TweenContainer = value;
+        }
+        
+        private ITweenContainer TweenContainer { get; set; }
         GridItem IGridItemGridAccess.GridItem => this;
         public int ID => _gridItemData.ID;
         public Vector2Int Coord => _cell.Coord;
@@ -19,6 +28,7 @@ namespace Components.Main
         [SerializeField] private Transform _transform;
         [SerializeField] private Bounds _gridBounds;
         [SerializeField] private bool _isVisible = true;
+        private Tween _selectedTween;
 
         void IGridItemGridAccess.Construct(GridItemData gridItemData, Cell cell, Bounds gridBounds)
         {
@@ -26,6 +36,16 @@ namespace Components.Main
             _gridItemData = gridItemData;
             _spriteRenderer.sprite = _gridItemData.Sprite;
             _cell = cell;
+        }
+
+        private void Awake()
+        {
+            TweenContainer = TweenContain.Install(this);
+        }
+
+        private void OnDisable()
+        {
+            TweenContainer.Clear();
         }
 
         void IGridItemGridAccess.ChangeCell(Cell newCell)
@@ -50,13 +70,44 @@ namespace Components.Main
 
         public ZenjectPool MyPool { get; set; }
 
-        public void AfterCreate() {}
+        void IZenjPoolObj.AfterCreate() {}
 
-        public void BeforeDeSpawn() {}
+        void IZenjPoolObj.BeforeDeSpawn() {}
 
-        public void TweenDelayedDeSpawn(Func<bool> onComplete) {}
+        void IZenjPoolObj.TweenDelayedDeSpawn(Func<bool> onComplete)
+        {
+            TweenContainer.AddTween = _transform.DOScale(Vector3.zero, 0.3f);
+            TweenContainer.AddedTween.onComplete += delegate
+            {
+                onComplete?.Invoke();
+            };
+        }
 
-        public void AfterSpawn() {}
+        void IZenjPoolObj.AfterSpawn()
+        {
+            _transform.localScale = Vector3.one;
+        }
+
+        void ISelectable.OnSelect()
+        {
+            _selectedTween = _transform.DoYoYo(1.2f, 0.3f);
+            TweenContainer.AddTween = _selectedTween;
+        }
+
+        void ISelectable.OnDeselect()
+        {
+            if (_selectedTween.IsActive())
+            {
+                _selectedTween.Kill();
+                _transform.localScale = Vector3.one;
+            }
+        }
+    }
+
+    public interface ISelectable
+    {
+        void OnSelect();
+        void OnDeselect();
     }
 
     public interface IGridItemGridAccess

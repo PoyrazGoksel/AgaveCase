@@ -31,6 +31,7 @@ namespace Components.Main
             _id = gridItem ? _gridItem.ID : -1;
         }
 
+#if UNITY_EDITOR
         private void OnDrawGizmos()
         {
             GUISkin skin = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector);
@@ -38,6 +39,7 @@ namespace Components.Main
             GizmosUtils.DrawText(skin ,_coord.ToString(), transformPosition + 0.7f * Vector3.up, Color.red);
             GizmosUtils.DrawText(skin ,"ID: " + _id, transformPosition + 0.7f * Vector3.down, Color.magenta);
         }
+#endif
     }
 
     public interface ICellGridAccess

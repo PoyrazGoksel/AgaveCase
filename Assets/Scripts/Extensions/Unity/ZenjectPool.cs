@@ -56,10 +56,6 @@ namespace Extensions.Unity
                     _myPool[i]
                     .DeSpawn();
 
-                    // thisPoolObjData.BeforeDeSpawn();
-                    // thisPoolObjData.GameObject.SetActive(false);
-                    // thisPoolObjData.IsActive = false;
-                    // _myPool[i] = thisPoolObjData;
                     ActiveCount --;
 
                     break;
@@ -72,12 +68,7 @@ namespace Extensions.Unity
             _myPool[i]
             .DeSpawn();
 
-            // ZenjPoolObjData thisPoolObjData = _myPool[i];
-            // thisPoolObjData.BeforeDeSpawn();
-            // thisPoolObjData.GameObject.SetActive(false);
-            // thisPoolObjData.IsActive = false;
             ActiveCount --;
-            // _myPool[i] = thisPoolObjData;
         }
 
         public void DeSpawnAll()

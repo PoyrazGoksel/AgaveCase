@@ -7,7 +7,7 @@ namespace Utils
     {
         public const string SettingsPath = "Settings/";
         public const string LevelsPath = SettingsPath + "Levels/";
-        public const string SaveFileExt = ".zg";
+        public const string SaveFileExt = ".sav";
         public const string MainSceneSettingsPath =
         SettingsPath + nameof(MainSceneSettings);
         public const string GridInstallerSettingsPath =

@@ -94,15 +94,20 @@ namespace Installers
 
         private void OnNextLevelBut()
         {
-            LoadGameScene();
+            LoadGameSceneAsync();
         }
 
         private void OnRestartLevelBut()
         {
-            LoadGameScene();
+            LoadGameSceneAsync();
+        }
+        
+        private void LoadGameScene()
+        {
+            SceneManager.LoadScene(MainSceneName, LoadSceneMode.Single);
         }
 
-        private void LoadGameScene()
+        private void LoadGameSceneAsync()
         {
             _loadingOperation = SceneManager.LoadSceneAsync(MainSceneName, LoadSceneMode.Single);
             _loadingOperation.allowSceneActivation = false;

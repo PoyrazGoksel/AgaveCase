@@ -15,8 +15,8 @@ namespace Utils
             Grid2DInstaller.Grid2D grid2D,
             int matchCount)
         => TryGetMatches(cell.GridItem.ID, cell, grid2D, matchCount);
-        
-        public static List<GridItem> TryGetMatches(int gridItemID,
+
+        private static List<GridItem> TryGetMatches(int gridItemID,
             Cell cell,
             Grid2DInstaller.Grid2D grid2D,
             int matchCount)
