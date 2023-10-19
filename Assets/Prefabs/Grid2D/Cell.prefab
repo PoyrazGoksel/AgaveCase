@@ -46,6 +46,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _spriteRenderer: {fileID: 5230496540710607077}
+  _gridItem: {fileID: 0}
+  _coord: {x: 0, y: 0}
+  _id: 0
+  _transform: {fileID: 6112406234687927863}
 --- !u!1 &8334433991912656892
 GameObject:
   m_ObjectHideFlags: 0

@@ -28,7 +28,7 @@ namespace Extensions.Unity
             _whileCond = whileCondition;
         }
 
-        public void SetPaused(bool isPaused)
+        public void SetPaused(bool isPaused = true)
         {
             _isPaused = isPaused;
         }

@@ -26,9 +26,15 @@ namespace Installers
 
         public override void Start()
         {
-            base.Start();
             _mySettings = MainSceneSettings.Settings;
             SetUIStartState();
+            InstantiateLevel();
+        }
+
+        private void InstantiateLevel()
+        {
+            GameObject currentLevel = Container.InstantiatePrefab
+            (_mySettings.LevelList[PlayerData.CurrentLevel.ToIndex()].LevelPrefab);
         }
 
         private void OnDisable()

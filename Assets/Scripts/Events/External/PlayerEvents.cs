@@ -1,7 +1,9 @@
-﻿using UnityEngine.Events;
+﻿using JetBrains.Annotations;
+using UnityEngine.Events;
 
 namespace Events.External
 {
+    [UsedImplicitly]
     public class PlayerEvents
     {
         public UnityAction<int> PlayerLevelChanged;

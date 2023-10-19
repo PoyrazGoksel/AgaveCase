@@ -1,10 +1,12 @@
-﻿using Datas;
+﻿using System;
+using Datas;
 using Datas.Players;
 using Datas.Settings;
 using Events.External;
 using Extensions.Unity;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Scripting;
 using Utils;
 using Zenject;
 
@@ -21,7 +23,6 @@ namespace Installers
         private float _loadingTimer;
         private AsyncOperation _loadingOperation;
 
-
         private void Awake()
         {
             _loadingRoutine = new RoutineHelper
@@ -32,26 +33,29 @@ namespace Installers
                 () => true
             );
         }
+
         public override void InstallBindings()
         {
             InstallEvents();
             InstallSettings();
             InstallData();
-            InstallUtils();
         }
 
         private void InstallEvents()
         {
-            // Container.Bind<PanelEvents>().AsSingle();
             Container.Bind<GameStateEvents>().AsSingle();
             Container.Bind<PlayerEvents>().AsSingle();
-            // Container.Bind<UIEvents>().AsSingle();
+            Container.Bind<GridEvents>().AsSingle();
+            Container.Bind<CameraEvents>().AsSingle();
         }
 
         private void InstallSettings()
         {
-            Container.BindInstance(Resources.Load<MainSceneSettings>(MainSceneSettings.Path))
+            Container.BindInstance(Resources.Load<MainSceneSettings>(EnvironmentVariables.MainSceneSettingsPath))
             .AsSingle();
+            
+            Container.BindInstance(Resources.Load<GridInstallerSettings>
+            (EnvironmentVariables.GridInstallerSettingsPath)).AsSingle();
         }
 
         private void InstallData()
@@ -63,11 +67,6 @@ namespace Installers
             
             Container.BindInstance((IGameData)_gameData)
             .AsSingle();
-        }
-
-        private void InstallUtils()
-        {
-            Container.BindInterfacesTo<InputListener>().AsSingle();
         }
 
         public override void Start()
